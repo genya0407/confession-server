@@ -144,22 +144,28 @@ func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(_ *http.Request) bool { return true }, // TODO: probably insecure?
 }
 
-func WebSock(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Println(r)
+func WebSock(w http.ResponseWriter, r *http.Request, ps httprouter.Params, p Person) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	_, p, err := conn.ReadMessage()
+	err = conn.WriteMessage(websocket.TextMessage, []byte(p.token))
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	_, msg, err := conn.ReadMessage()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Println(string(p))
+	log.Println(string(msg))
 }
 
 func HelloInternal(w http.ResponseWriter, r *http.Request, ps httprouter.Params, p Person) {
@@ -171,7 +177,7 @@ func main() {
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
 	router.GET("/hellointernal/:greet", AuthorizeBearer(HelloInternal))
-	router.GET("/connect", WebSock)
+	router.GET("/connect", AuthorizeBearer(WebSock))
 
 	log.Fatal(http.ListenAndServe("localhost:8080", router))
 }
