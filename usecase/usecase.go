@@ -55,6 +55,11 @@ type CreateChatResultDTO struct {
 	AnonymousLoginInfo AnonymousLoginInfoDTO
 }
 
+type Socket interface {
+	SendText(msg MessageDTO)
+	Close()
+}
+
 // UseCases
 
 type accountID = uuid.UUID
@@ -85,6 +90,7 @@ var (
 
 // CreateChat : When creating chat, one should specify beginning text
 type CreateChat = func(accountID, string) (CreateChatResultDTO, *CreateChatError)
+type JoinChatAnonymous = func(AnonymousLoginInfoDTO, chatID, Socket)
 type SendMessageAnonymous = func(AnonymousLoginInfoDTO, chatID, MessageDTO)
 
 // UseCase Implementations

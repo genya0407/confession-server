@@ -1,12 +1,13 @@
 package json_api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/genya0407/confession-server/usecase"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
-	// "log"
-	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -116,5 +117,53 @@ func GenerateCreateChat(createChat usecase.CreateChat) EverybodyEndpoint {
 			AnonymousSessionToken: createChatResultDTO.AnonymousLoginInfo.SessionToken,
 		}
 		json.NewEncoder(w).Encode(response)
+	}
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(_ *http.Request) bool { return true }, // TODO: probably insecure?
+}
+
+type SocketImpl struct {
+	conn *websocket.Conn
+}
+
+func (s *SocketImpl) SendTextJSON(msg MessageJSON) {
+	s.conn.WriteJSON(msg)
+}
+
+func (s *SocketImpl) SendText(msg usecase.MessageDTO) {
+	s.SendTextJSON(MessageJSON{
+		MessageID:   msg.MessageID,
+		Text:        msg.Text,
+		ByAnonymous: msg.ByAnonymous,
+		SentAt:      msg.SentAt,
+	})
+}
+
+func (s *SocketImpl) Close() {
+	s.conn.Close()
+}
+
+func GenerateJoinChatAnonymous(joinChatAnonymous usecase.JoinChatAnonymous) AnonymousAuthorizedEndpoint {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params, anonymousLoginInfo usecase.AnonymousLoginInfoDTO) {
+		chatIDString := ps.ByName("chat_id")
+		chatID, err := uuid.Parse(chatIDString)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Invalid ChatID")
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		var socket usecase.Socket = &SocketImpl{conn: conn}
+		joinChatAnonymous(anonymousLoginInfo, chatID, socket)
 	}
 }
