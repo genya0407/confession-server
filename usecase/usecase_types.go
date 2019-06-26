@@ -60,25 +60,25 @@ type Socket interface {
 	Close()
 }
 
-// UseCases
+type AccountID = uuid.UUID
+type ChatID = uuid.UUID
 
-type accountID = uuid.UUID
-type chatID = uuid.UUID
+// UseCases
 
 /// Everybody
 
-type GetAccountInfo = func(accountID) (AccountInfoDTO, bool)
-type GetFinishedChatAbstractsByAccountID = func(accountID) []ChatAbstractDTO
-type GetFinishedChatByChatID = func(chatID) ChatDTO
+type GetAccountInfo = func(AccountID) (AccountInfoDTO, bool)
+type GetFinishedChatAbstractsByAccountID = func(AccountID) []ChatAbstractDTO
+type GetFinishedChatByChatID = func(ChatID) ChatDTO
 
 /// Account
 
 type RegisterAccount = func(TwitterAccountInfoDTO) AccountInfoDTO
 type GetLoginAccountInfo = func(TwitterAccountInfoDTO) AccountLoginInfoDTO
 type GetMyChatAbstracts = func(AccountLoginInfoDTO) []ChatAbstractDTO
-type GetMyChat = func(AccountLoginInfoDTO, chatID) ChatDTO
-type SendMessageAccount = func(AccountLoginInfoDTO, chatID, MessageDTO)
-type FinishMyChat = func(AccountLoginInfoDTO, chatID)
+type GetMyChat = func(AccountLoginInfoDTO, ChatID) ChatDTO
+type SendMessageAccount = func(AccountLoginInfoDTO, ChatID, MessageDTO)
+type FinishMyChat = func(AccountLoginInfoDTO, ChatID)
 
 /// Anonymous
 
@@ -89,9 +89,17 @@ var (
 )
 
 // CreateChat : When creating chat, one should specify beginning text
-type CreateChat = func(accountID, string) (CreateChatResultDTO, *CreateChatError)
-type JoinChatAnonymous = func(AnonymousLoginInfoDTO, chatID, Socket)
-type SendMessageAnonymous = func(AnonymousLoginInfoDTO, chatID, MessageDTO)
+type CreateChat = func(AccountID, string) (CreateChatResultDTO, *CreateChatError)
+
+type JoinChatAnonymousError = int
+
+var (
+	ChatNotFound JoinChatAnonymousError = 0
+	InvalidToken                        = 1
+)
+
+type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) *JoinChatAnonymousError
+type SendMessageAnonymous = func(AnonymousLoginInfoDTO, ChatID, MessageDTO)
 
 // UseCase Implementations
 // TODO
