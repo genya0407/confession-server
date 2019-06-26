@@ -46,7 +46,7 @@ type Message struct {
 type TextMessage = string
 
 type Socket interface {
-	SendText(msg TextMessage)
+	SendText(msg Message)
 	Close()
 }
 
@@ -112,6 +112,7 @@ func (c *Chat) SendAccountMessageToAnonymous(text TextMessage) {
 type FindAccountByID = func(uuid.UUID) Account
 type FindAccountByToken = func(string) Account
 type FindAnonymousByToken = func(string) Anonymous
-type FindChatByID = func(uuid.UUID) Chat
+type FindChatByID = func(uuid.UUID) (Chat, bool)
 type StoreMessage = func(uuid.UUID, Message)
 type FinishChat = func(uuid.UUID, time.Time)
+type RegisterAnonymousSocket = func(ChatID, Socket)
