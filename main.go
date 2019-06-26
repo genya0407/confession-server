@@ -17,12 +17,6 @@ func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(_ *http.Request) bool { return true }, // TODO: probably insecure?
-}
-
 func WebSock(w http.ResponseWriter, r *http.Request, ps httprouter.Params, t auth.SessionToken) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

@@ -1,25 +1,11 @@
 package usecase
 
 import (
-	"fmt"
 	"github.com/genya0407/confession-server/entity"
 	"github.com/google/uuid"
 	"testing"
 	"time"
 )
-
-/*
-	ChatID          ChatID
-	Account         Account
-	Anonymous       Anonymous
-	Messages        []Message
-	StartedAt       time.Time
-	FinishedAt      *time.Time
-	AccountSocket   Socket
-	AnonymousSocket Socket
-	StoreMessage    StoreMessage
-	FinishChat      FinishChat
-*/
 
 func mustNewUUID() uuid.UUID {
 	u, err := uuid.NewUUID()
