@@ -90,16 +90,8 @@ var (
 
 // CreateChat : When creating chat, one should specify beginning text
 type CreateChat = func(AccountID, string) (CreateChatResultDTO, *CreateChatError)
-
-type JoinChatAnonymousError = int
-
-var (
-	ChatNotFound JoinChatAnonymousError = 0
-	InvalidToken                        = 1
-)
-
-type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) *JoinChatAnonymousError
-type SendMessageAnonymous = func(AnonymousLoginInfoDTO, ChatID, MessageDTO)
+type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) error
+type SendMessageAnonymousToAccount = func(AnonymousLoginInfoDTO, ChatID, MessageDTO) error
 
 // UseCase Implementations
 // TODO

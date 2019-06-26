@@ -1,13 +1,13 @@
 package usecase
 
 import (
+	"errors"
 	"github.com/genya0407/confession-server/entity"
 )
 
 // = func(AnonymousLoginInfoDTO, chatID, Socket)
 
 type SocketImpl struct {
-	c Chat
 	s Socket
 }
 
@@ -20,20 +20,37 @@ func (si *SocketImpl) SendText(msg entity.Message) {
 	})
 }
 
-func GenerateJoinChatAnonymous(findChatByID entity.FindChatByID, registerAnonymousSocket entity.RegisterAnonymousSocket) JoinChatAnonymous {
-	return func(anonLoginInfo AnonymousLoginInfoDTO, cID ChatID, s Socket) *JoinChatAnonymousError {
-		chat, ok := findChatByID(cID)
+func (si *SocketImpl) Close() {
+	si.s.Close()
+}
+
+func GenerateJoinChatAnonymous(findChatByID entity.FindChatAnonymous, registerAnonymousSocket entity.RegisterAnonymousSocket) JoinChatAnonymous {
+	return func(anonLoginInfo AnonymousLoginInfoDTO, cID ChatID, s Socket) error {
+		_, ok := findChatByID(cID, entity.Anonymous{Token: anonLoginInfo.SessionToken})
 		if !ok {
 			s.Close()
-			return &ChatNotFound
+			return errors.New("Chat not found")
 		}
 
-		if chat.Anonymous.Token != anonLoginInfo.SessionToken {
-			s.Close()
-			return &InvalidToken
+		registerAnonymousSocket(cID, &SocketImpl{s: s})
+
+		return nil
+	}
+}
+
+func GenerateSendMessageAnonymousToAccount(findChatByID entity.FindChatAnonymous) SendMessageAnonymousToAccount {
+	return func(anonLoginInfo AnonymousLoginInfoDTO, chatID ChatID, msg MessageDTO) error {
+		chat, ok := findChatByID(chatID, entity.Anonymous{Token: anonLoginInfo.SessionToken})
+		if !ok {
+			return errors.New("Chat not found")
 		}
 
-		registerAnonymousSocket(cID, s)
+		chat.AccountSocket.SendText(entity.Message{
+			MessageID:   msg.MessageID,
+			Text:        msg.Text,
+			SentAt:      msg.SentAt,
+			ByAnonymous: msg.ByAnonymous,
+		})
 
 		return nil
 	}
