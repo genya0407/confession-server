@@ -22,17 +22,21 @@ func GenerateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.
 	}
 }
 
-func TestGetAccountInfo(t *testing.T) {
-	mockname := "Mock name"
-	accountID, err := uuid.NewUUID()
+func generateMockGetAccountInfoRouter(mockname string, accountID uuid.UUID) *httprouter.Router {
 	uc := GenerateMockUsecaseAccountInfoDTO(mockname, accountID)
-
-	if err != nil {
-		panic(err.Error())
-	}
 	handler := GetAccountInfoGenerator(uc)
 	router := httprouter.New()
 	router.GET("/account/:account_id", handler)
+	return router
+}
+
+func TestGetAccountInfo(t *testing.T) {
+	mockname := "Mock name"
+	accountID, err := uuid.NewUUID()
+	if err != nil {
+		panic(err.Error())
+	}
+	router := generateMockGetAccountInfoRouter(mockname, accountID)
 
 	req := httptest.NewRequest("GET", "http://confession.com/account/"+accountID.String(), nil)
 	w := httptest.NewRecorder()
@@ -53,5 +57,26 @@ func TestGetAccountInfo(t *testing.T) {
 	}
 	if result.Name != mockname {
 		t.Error("Invalid result name")
+	}
+}
+
+func TestGetAccountInfoNotFound(t *testing.T) {
+	mockname := "Mock name"
+	accountID, err := uuid.NewUUID()
+	if err != nil {
+		panic(err.Error())
+	}
+	router := generateMockGetAccountInfoRouter(mockname, accountID)
+
+	notExistAccountID, err := uuid.NewUUID()
+	if err != nil {
+		panic(err.Error())
+	}
+	req := httptest.NewRequest("GET", "http://confession.com/account/"+notExistAccountID.String(), nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusNotFound {
+		t.Error("Invalid status")
 	}
 }

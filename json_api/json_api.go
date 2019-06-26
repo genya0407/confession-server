@@ -49,15 +49,16 @@ func GetAccountInfoGenerator(getAccountInfo usecase.GetAccountInfo) EverybodyEnd
 		accountIDString := ps.ByName("account_id")
 		accountID, err := uuid.Parse(accountIDString)
 		if err != nil {
-			fmt.Fprint(w, "Invalid AccountID")
 			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Invalid AccountID")
 			return
 		}
 
 		account, ok := getAccountInfo(accountID)
 		if !ok {
-			fmt.Fprintf(w, "Account not found: %s", accountID.String())
 			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "Account not found: %s", accountID.String())
+			return
 		}
 
 		accountJSON := AccountJSON{
