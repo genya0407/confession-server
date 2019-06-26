@@ -24,7 +24,7 @@ func GenerateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.
 
 func generateMockGetAccountInfoRouter(mockname string, accountID uuid.UUID) *httprouter.Router {
 	uc := GenerateMockUsecaseAccountInfoDTO(mockname, accountID)
-	handler := GetAccountInfoGenerator(uc)
+	handler := GenerateGetAccountInfo(uc)
 	router := httprouter.New()
 	router.GET("/account/:account_id", handler)
 	return router

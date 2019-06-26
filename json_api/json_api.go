@@ -44,7 +44,7 @@ type EverybodyEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Par
 type AccountAuthorizedEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AccountLoginInfoDTO)
 type AnonymousAuthorizedEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AnonymousLoginInfoDTO)
 
-func GetAccountInfoGenerator(getAccountInfo usecase.GetAccountInfo) EverybodyEndpoint {
+func GenerateGetAccountInfo(getAccountInfo usecase.GetAccountInfo) EverybodyEndpoint {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		accountIDString := ps.ByName("account_id")
 		accountID, err := uuid.Parse(accountIDString)
