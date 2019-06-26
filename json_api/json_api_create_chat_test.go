@@ -102,23 +102,6 @@ func TestCreateChat(t *testing.T) {
 	}
 }
 
-// func TestGetAccountInfoNotFound(t *testing.T) {
-// 	mockname := "Mock name"
-// 	accountID, err := uuid.NewUUID()
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	router := generateMockGetAccountInfoRouter(mockname, accountID)
-
-// 	notExistAccountID, err := uuid.NewUUID()
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	req := httptest.NewRequest("GET", "http://confession.com/account/"+notExistAccountID.String(), nil)
-// 	w := httptest.NewRecorder()
-
-// 	router.ServeHTTP(w, req)
-// 	if w.Code != http.StatusNotFound {
-// 		t.Error("Invalid status")
-// 	}
-// }
+// TODO: tests for
+// - invalid accountID
+// - invalid chatID for the accountID
