@@ -10,18 +10,22 @@ import (
 	"testing"
 )
 
+func GenerateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.GetAccountInfo {
+	return func(id uuid.UUID) (usecase.AccountInfoDTO, bool) {
+		if id != expectID {
+			return usecase.AccountInfoDTO{}, false
+		}
+		return usecase.AccountInfoDTO{
+			AccountID: expectID,
+			Name:      name,
+		}, true
+	}
+}
+
 func TestGetAccountInfo(t *testing.T) {
 	mockname := "Mock name"
 	accountID, err := uuid.NewUUID()
-	var uc = func(id uuid.UUID) usecase.AccountInfoDTO {
-		if id != accountID {
-			panic("unexpected id")
-		}
-		return usecase.AccountInfoDTO{
-			AccountID: accountID,
-			Name:      mockname,
-		}
-	}
+	uc := GenerateMockUsecaseAccountInfoDTO(mockname, accountID)
 
 	if err != nil {
 		panic(err.Error())

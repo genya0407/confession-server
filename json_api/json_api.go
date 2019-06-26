@@ -1,11 +1,12 @@
 package json_api
 
 import (
-	// "fmt"
+	"fmt"
 	"github.com/genya0407/confession-server/usecase"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	// "log"
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -45,6 +46,26 @@ type AnonymousAuthorizedEndpoint = func(http.ResponseWriter, *http.Request, http
 
 func GetAccountInfoGenerator(getAccountInfo usecase.GetAccountInfo) EverybodyEndpoint {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// do nothing
+		accountIDString := ps.ByName("account_id")
+		accountID, err := uuid.Parse(accountIDString)
+		if err != nil {
+			fmt.Fprint(w, "Invalid AccountID")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		account, ok := getAccountInfo(accountID)
+		if !ok {
+			fmt.Fprintf(w, "Account not found: %s", accountID.String())
+			w.WriteHeader(http.StatusNotFound)
+		}
+
+		accountJSON := AccountJSON{
+			AccountID:  account.AccountID,
+			Name:       account.Name,
+			ScreenName: account.ScreeName,
+			ImageURL:   account.ImageURL,
+		}
+		json.NewEncoder(w).Encode(accountJSON)
 	}
 }
