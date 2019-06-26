@@ -27,9 +27,12 @@ type ChatJSON struct {
 	FinishedAt *time.Time    `json:"finished_at,omitempty"`
 }
 
+type NewMessageJSON struct {
+	Text string `json:"text"`
+}
+
 type MessageJSON struct {
 	MessageID   uuid.UUID `json:"message_id"`
-	Text        string    `json:"text"`
 	ByAnonymous bool      `json:"by_anonymous"`
 	SentAt      time.Time `json:"sent_at"`
 }
@@ -147,7 +150,7 @@ func (s *SocketImpl) Close() {
 	s.conn.Close()
 }
 
-func GenerateJoinChatAnonymous(joinChatAnonymous usecase.JoinChatAnonymous) AnonymousAuthorizedEndpoint {
+func GenerateJoinChatAnonymous(joinChatAnonymous usecase.JoinChatAnonymous, sendMessageAnonymousToAccount usecase.SendMessageAnonymousToAccount) AnonymousAuthorizedEndpoint {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params, anonymousLoginInfo usecase.AnonymousLoginInfoDTO) {
 		chatIDString := ps.ByName("chat_id")
 		chatID, err := uuid.Parse(chatIDString)
@@ -163,7 +166,17 @@ func GenerateJoinChatAnonymous(joinChatAnonymous usecase.JoinChatAnonymous) Anon
 			return
 		}
 
-		var socket usecase.Socket = &SocketImpl{conn: conn}
-		joinChatAnonymous(anonymousLoginInfo, chatID, socket)
+		joinChatAnonymous(anonymousLoginInfo, chatID, &SocketImpl{conn: conn})
+
+		for {
+			newMessageJSON := &NewMessageJSON{}
+			err := conn.ReadJSON(newMessageJSON)
+			if err != nil {
+				log.Println(err)
+				conn.Close()
+				break
+			}
+			sendMessageAnonymousToAccount(anonymousLoginInfo, chatID, newMessageJSON.Text)
+		}
 	}
 }

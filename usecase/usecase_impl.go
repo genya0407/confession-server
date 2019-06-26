@@ -39,18 +39,13 @@ func GenerateJoinChatAnonymous(findChatByID entity.FindChatAnonymous, registerAn
 }
 
 func GenerateSendMessageAnonymousToAccount(findChatByID entity.FindChatAnonymous) SendMessageAnonymousToAccount {
-	return func(anonLoginInfo AnonymousLoginInfoDTO, chatID ChatID, msg MessageDTO) error {
+	return func(anonLoginInfo AnonymousLoginInfoDTO, chatID ChatID, msgText MessageText) error {
 		chat, ok := findChatByID(chatID, entity.Anonymous{Token: anonLoginInfo.SessionToken})
 		if !ok {
 			return errors.New("Chat not found")
 		}
 
-		chat.AccountSocket.SendText(entity.Message{
-			MessageID:   msg.MessageID,
-			Text:        msg.Text,
-			SentAt:      msg.SentAt,
-			ByAnonymous: msg.ByAnonymous,
-		})
+		chat.SendAnonymousMessageToAccount(msgText)
 
 		return nil
 	}

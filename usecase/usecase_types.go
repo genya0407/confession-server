@@ -39,9 +39,11 @@ type ChatDTO struct {
 	FinishedAt *time.Time
 }
 
+type MessageText = string
+
 type MessageDTO struct {
 	MessageID   uuid.UUID
-	Text        string
+	Text        MessageText
 	ByAnonymous bool
 	SentAt      time.Time
 }
@@ -91,7 +93,7 @@ var (
 // CreateChat : When creating chat, one should specify beginning text
 type CreateChat = func(AccountID, string) (CreateChatResultDTO, *CreateChatError)
 type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) error
-type SendMessageAnonymousToAccount = func(AnonymousLoginInfoDTO, ChatID, MessageDTO) error
+type SendMessageAnonymousToAccount = func(AnonymousLoginInfoDTO, ChatID, MessageText) error
 
 // UseCase Implementations
 // TODO
