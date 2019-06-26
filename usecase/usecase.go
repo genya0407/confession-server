@@ -62,7 +62,7 @@ type chatID = uuid.UUID
 
 /// Everybody
 
-type GetAccountInfoUsecase = func(accountID) AccountInfoDTO
+type GetAccountInfo = func(accountID) AccountInfoDTO
 type GetFinishedChatAbstractsByAccountID = func(accountID) []ChatAbstractDTO
 type GetFinishedChatByChatID = func(chatID) ChatDTO
 
