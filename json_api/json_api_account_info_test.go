@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func GenerateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.GetAccountInfo {
+func generateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.GetAccountInfo {
 	return func(id uuid.UUID) (usecase.AccountInfoDTO, bool) {
 		if id != expectID {
 			return usecase.AccountInfoDTO{}, false
@@ -23,7 +23,7 @@ func GenerateMockUsecaseAccountInfoDTO(name string, expectID uuid.UUID) usecase.
 }
 
 func generateMockGetAccountInfoRouter(mockname string, accountID uuid.UUID) *httprouter.Router {
-	uc := GenerateMockUsecaseAccountInfoDTO(mockname, accountID)
+	uc := generateMockUsecaseAccountInfoDTO(mockname, accountID)
 	handler := GenerateGetAccountInfo(uc)
 	router := httprouter.New()
 	router.GET("/account/:account_id", handler)

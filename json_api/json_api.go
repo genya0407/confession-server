@@ -40,6 +40,15 @@ type ChatAbstractJSON struct {
 	FinishedAt           *time.Time `json:"finished_at,omitempty"`
 }
 
+type CreateChatRequestJSON struct {
+	BeginningMessageText string `json:"beginning_message_text"`
+}
+
+type CreateChatResponseJSON struct {
+	ChatID                uuid.UUID `json:"chat_id"`
+	AnonymousSessionToken string    `json:"session_token"`
+}
+
 type EverybodyEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Params)
 type AccountAuthorizedEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AccountLoginInfoDTO)
 type AnonymousAuthorizedEndpoint = func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AnonymousLoginInfoDTO)
@@ -68,5 +77,44 @@ func GenerateGetAccountInfo(getAccountInfo usecase.GetAccountInfo) EverybodyEndp
 			ImageURL:   account.ImageURL,
 		}
 		json.NewEncoder(w).Encode(accountJSON)
+	}
+}
+
+func GenerateCreateChat(createChat usecase.CreateChat) EverybodyEndpoint {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		accountIDString := ps.ByName("account_id")
+		accountID, err := uuid.Parse(accountIDString)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Invalid AccountID")
+			return
+		}
+
+		createChatJSON := &CreateChatRequestJSON{}
+		err = json.NewDecoder(r.Body).Decode(createChatJSON)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "Invalid request")
+			return
+		}
+
+		createChatResultDTO, createChatErr := createChat(accountID, createChatJSON.BeginningMessageText)
+		if createChatErr != nil {
+			switch *createChatErr {
+			case usecase.AccountNotFound:
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprint(w, "Account not found")
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "Internal server error")
+			}
+			return
+		}
+
+		response := &CreateChatResponseJSON{
+			ChatID:                createChatResultDTO.Chat.ChatID,
+			AnonymousSessionToken: createChatResultDTO.AnonymousLoginInfo.SessionToken,
+		}
+		json.NewEncoder(w).Encode(response)
 	}
 }

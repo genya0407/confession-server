@@ -1,8 +1,9 @@
-package authorization
+package json_api
 
 import (
 	"errors"
 	"fmt"
+	"github.com/genya0407/confession-server/usecase"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -93,23 +94,37 @@ func fetchToken(r *http.Request) (string, error) {
 	return "", paramsErr
 }
 
-type SessionToken = string
+func handleError(w http.ResponseWriter, err error) {
+	switch err.Error() {
+	case "Authorization required":
+		requireAuthorizationBearer(w)
+	case "Invalid Request":
+		invalidRequest(w)
+	default:
+		panic(err.Error())
+	}
+}
 
-func AuthorizeBearer(route func(http.ResponseWriter, *http.Request, httprouter.Params, SessionToken)) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func AuthorizeAnonymous(route func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AnonymousLoginInfoDTO)) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		token, err := fetchToken(r)
 		if err != nil {
-			switch err.Error() {
-			case "Authorization required":
-				requireAuthorizationBearer(w)
-			case "Invalid Request":
-				invalidRequest(w)
-			default:
-				panic(err.Error())
-			}
+			handleError(w, err)
 			return
 		}
 
-		route(w, r, ps, token)
+		route(w, r, ps, usecase.AnonymousLoginInfoDTO{SessionToken: token})
+	}
+}
+
+func AuthorizeAccount(route func(http.ResponseWriter, *http.Request, httprouter.Params, usecase.AccountLoginInfoDTO)) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		token, err := fetchToken(r)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+
+		route(w, r, ps, usecase.AccountLoginInfoDTO{SessionToken: token})
 	}
 }

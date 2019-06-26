@@ -77,8 +77,14 @@ type FinishMyChat = func(AccountLoginInfoDTO, chatID)
 
 /// Anonymous
 
+type CreateChatError = int
+
+var (
+	AccountNotFound CreateChatError = 0
+)
+
 // CreateChat : When creating chat, one should specify beginning text
-type CreateChat = func(accountID, string) CreateChatResultDTO
+type CreateChat = func(accountID, string) (CreateChatResultDTO, *CreateChatError)
 type SendMessageAnonymous = func(AnonymousLoginInfoDTO, chatID, MessageDTO)
 
 // UseCase Implementations
