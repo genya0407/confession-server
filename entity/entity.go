@@ -32,8 +32,7 @@ type Account struct {
 }
 
 type Anonymous struct {
-	AnonymousID uuid.UUID
-	Token       string
+	Token string
 }
 
 type Message struct {
@@ -88,7 +87,7 @@ func (c *Chat) SendAnonymousMessageToAccount(text TextMessage) {
 	c.Messages = append(c.Messages, msg)
 
 	if c.AccountSocket != nil {
-		c.AccountSocket.SendText(msg.Text)
+		c.AccountSocket.SendText(msg)
 	}
 }
 
@@ -103,7 +102,7 @@ func (c *Chat) SendAccountMessageToAnonymous(text TextMessage) {
 	c.Messages = append(c.Messages, msg)
 
 	if c.AnonymousSocket != nil {
-		c.AnonymousSocket.SendText(msg.Text)
+		c.AnonymousSocket.SendText(msg)
 	}
 }
 
@@ -112,7 +111,7 @@ func (c *Chat) SendAccountMessageToAnonymous(text TextMessage) {
 type FindAccountByID = func(uuid.UUID) Account
 type FindAccountByToken = func(string) Account
 type FindAnonymousByToken = func(string) Anonymous
-type FindChatByID = func(uuid.UUID) (Chat, bool)
+type FindChatAnonymous = func(uuid.UUID, Anonymous) (Chat, bool)
 type StoreMessage = func(uuid.UUID, Message)
 type FinishChat = func(uuid.UUID, time.Time)
 type RegisterAnonymousSocket = func(ChatID, Socket)
