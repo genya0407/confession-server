@@ -1,4 +1,4 @@
-package entity
+package domain
 
 import (
 	"sync"
@@ -11,10 +11,10 @@ import (
 
 // data structures
 
-type TwitterAccount struct {
-	TwitterAccountID string
-	AccountID        uuid.UUID
-}
+// type TwitterAccount struct {
+// 	TwitterAccountID string
+// 	AccountID        uuid.UUID
+// }
 
 type IAccount interface {
 	AccountID() uuid.UUID
@@ -72,35 +72,35 @@ func NewAnonymous() Anonymous {
 
 type IMessage interface {
 	MessageID() uuid.UUID
-	Text() TextMessage
+	Text() MessageText
 	ByAnonymous() bool
 	SentAt() time.Time
 }
 
 type Message struct {
 	messageID   uuid.UUID
-	text        TextMessage
+	text        MessageText
 	byAnonymous bool
 	sentAt      time.Time
 }
 
-func (m *Message) MessageID() uuid.UUID {
+func (m Message) MessageID() uuid.UUID {
 	return m.messageID
 }
 
-func (m *Message) Text() TextMessage {
+func (m Message) Text() MessageText {
 	return m.text
 }
 
-func (m *Message) ByAnonymous() bool {
+func (m Message) ByAnonymous() bool {
 	return m.byAnonymous
 }
 
-func (m *Message) SentAt() time.Time {
+func (m Message) SentAt() time.Time {
 	return m.sentAt
 }
 
-func NewAnonymousMessage(text TextMessage) IMessage {
+func NewAnonymousMessage(text MessageText) IMessage {
 	return &Message{
 		messageID:   utils.MustNewUUID(),
 		text:        text,
@@ -109,7 +109,7 @@ func NewAnonymousMessage(text TextMessage) IMessage {
 	}
 }
 
-func NewAccountMessage(text TextMessage) IMessage {
+func NewAccountMessage(text MessageText) IMessage {
 	return &Message{
 		messageID:   utils.MustNewUUID(),
 		text:        text,
@@ -118,9 +118,9 @@ func NewAccountMessage(text TextMessage) IMessage {
 	}
 }
 
-type TextMessage = string
+type MessageText = string
 
-type Socket interface {
+type ISocket interface {
 	SendText(msg IMessage)
 	Close()
 }
@@ -136,35 +136,33 @@ type IChat interface {
 	AuthorizeAccount(Account) bool
 	SendAccountMessageToAnonymous(string)
 	SendAnonymousMessageToAccount(string)
-	RegisterAccountSocket(Socket)
-	RegisterAnonymousSocket(Socket)
+	RegisterAccountSocket(ISocket)
+	RegisterAnonymousSocket(ISocket)
 	Close()
 }
 
 type Chat struct {
 	chatID          ChatID
-	Account         Account
-	Anonymous       Anonymous
+	account         IAccount
+	anonymous       IAnonymous
 	messages        []IMessage
 	startedAt       time.Time
 	finishedAt      utils.NullableTime
-	AccountSocket   Socket
-	AnonymousSocket Socket
-	StoreChat       StoreChat
+	accountSocket   ISocket
+	anonymousSocket ISocket
 	m               *sync.Mutex
 }
 
-func NewChat(acc Account, anon Anonymous, storeChat StoreChat, beginningMessateText TextMessage) IChat {
+func NewChat(acc IAccount, anon IAnonymous, beginningMessateText MessageText) IChat {
 	msgs := []IMessage{
 		NewAnonymousMessage(beginningMessateText),
 	}
 	return &Chat{
 		chatID:    utils.MustNewUUID(),
-		Account:   acc,
-		Anonymous: anon,
+		account:   acc,
+		anonymous: anon,
 		messages:  msgs,
 		startedAt: time.Now(),
-		StoreChat: storeChat,
 		m:         &sync.Mutex{},
 	}
 }
@@ -186,11 +184,11 @@ func (c *Chat) FinishedAt() utils.NullableTime {
 }
 
 func (c *Chat) AuthorizeAccount(acc Account) bool {
-	return c.Account == acc
+	return c.account == acc
 }
 
 func (c *Chat) AuthorizeAnonymous(anon Anonymous) bool {
-	return c.Anonymous == anon
+	return c.anonymous == anon
 }
 
 func (c *Chat) Close() {
@@ -198,62 +196,50 @@ func (c *Chat) Close() {
 	defer c.m.Unlock()
 
 	c.finishedAt = utils.NullableTime{Null: false, Value: time.Now()}
-	c.StoreChat(c)
 
-	if c.AccountSocket != nil {
-		c.AccountSocket.Close()
+	if c.accountSocket != nil {
+		c.accountSocket.Close()
 	}
 
-	if c.AnonymousSocket != nil {
-		c.AnonymousSocket.Close()
+	if c.anonymousSocket != nil {
+		c.anonymousSocket.Close()
 	}
 }
 
-func (c *Chat) SendAnonymousMessageToAccount(text TextMessage) {
+func (c *Chat) SendAnonymousMessageToAccount(text MessageText) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
 	msg := NewAnonymousMessage(text)
 	c.messages = append(c.messages, msg)
-	c.StoreChat(c)
 
-	if c.AccountSocket != nil {
-		c.AccountSocket.SendText(msg)
+	if c.accountSocket != nil {
+		c.accountSocket.SendText(msg)
 	}
 }
 
-func (c *Chat) SendAccountMessageToAnonymous(text TextMessage) {
+func (c *Chat) SendAccountMessageToAnonymous(text MessageText) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
 	msg := NewAccountMessage(text)
 	c.messages = append(c.messages, msg)
-	c.StoreChat(c)
 
-	if c.AnonymousSocket != nil {
-		c.AnonymousSocket.SendText(msg)
+	if c.anonymousSocket != nil {
+		c.anonymousSocket.SendText(msg)
 	}
 }
 
-func (c *Chat) RegisterAccountSocket(s Socket) {
+func (c *Chat) RegisterAccountSocket(s ISocket) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	c.AccountSocket = s
+	c.accountSocket = s
 }
 
-func (c *Chat) RegisterAnonymousSocket(s Socket) {
+func (c *Chat) RegisterAnonymousSocket(s ISocket) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	c.AnonymousSocket = s
+	c.anonymousSocket = s
 }
-
-// repositories
-
-type FindAccountByID = func(uuid.UUID) (Account, bool)
-type FindAccountByToken = func(string) (Account, bool)
-type FindAnonymousByToken = func(string) (Anonymous, bool)
-
-type FindChatByID = func(uuid.UUID) (Chat, bool)
-type StoreChat = func(*Chat) error
