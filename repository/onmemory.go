@@ -30,6 +30,7 @@ func (repo *OnMemoryRepository) StoreChat(chat domain.IChat) error {
 	defer repo.m.Unlock()
 
 	repo.ChatStorage[chat.ChatID()] = chat
+	repo.AnonymousStorage[chat.Anonymous().Token()] = chat.Anonymous()
 	return nil
 }
 
