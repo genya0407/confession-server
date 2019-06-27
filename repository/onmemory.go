@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"github.com/k0kubun/pp"
+	"log"
 	"sync"
 
 	"github.com/genya0407/confession-server/domain"
 	"github.com/google/uuid"
-	"github.com/k0kubun/pp"
 )
 
 type OnMemoryRepository struct {
@@ -29,7 +30,6 @@ func (repo *OnMemoryRepository) StoreChat(chat domain.IChat) error {
 	defer repo.m.Unlock()
 
 	repo.ChatStorage[chat.ChatID()] = chat
-	pp.Println(repo)
 	return nil
 }
 
@@ -46,6 +46,11 @@ func (repo *OnMemoryRepository) FindAccountByToken(token string) (domain.IAccoun
 	defer repo.m.Unlock()
 
 	acc, ok := repo.AccountStorage[token]
+	log.Println(`FindAccountByToken tried.`)
+	if !ok {
+		log.Println(`But failed (not found)`)
+	}
+	pp.Print(acc)
 	return acc, ok
 }
 

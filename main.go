@@ -10,6 +10,7 @@ import (
 	"github.com/k0kubun/pp"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 func joinChatAnonymousHandler(repo *repository.OnMemoryRepository) func(http.ResponseWriter, *http.Request, httprouter.Params) {
@@ -73,6 +74,22 @@ func main() {
 	repo.AccountStorage[account.Token()] = account
 	pp.Println(account)
 	pp.Println(account.AccountID().String())
+	chat := domain.NewChat(account, "Lets start some chat!")
+	repo.StoreChat(chat)
+	pp.Println(chat)
+	pp.Println(chat.ChatID().String())
+
+	accountWSURL := fmt.Sprintf(`ws://localhost:8080/connect/chat/%s?access_token=%s`, chat.ChatID(), url.QueryEscape(account.Token()))
+	anonymousWSURL := fmt.Sprintf(`ws://localhost:8080/anonymous/account/%s/chat/%s?access_token=%s`, account.AccountID(), chat.ChatID(), url.QueryEscape(chat.Anonymous().Token()))
+
+	fmt.Printf(`
+acc = new WebSocket("%s");
+acc.onmessage = function(msg) { console.log(msg) };
+
+anon = new WebSocket("%s");
+anon.onmessage = function(msg) { console.log(msg) };
+
+`, accountWSURL, anonymousWSURL)
 
 	router := httprouter.New()
 	router.GET(`/anonymous/account/:account_id/chat/:chat_id`, joinChatAnonymousHandler(repo))
