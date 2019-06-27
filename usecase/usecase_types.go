@@ -1,8 +1,10 @@
 package usecase
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/genya0407/confession-server/utils"
+	"github.com/google/uuid"
 )
 
 // DTOs
@@ -36,7 +38,7 @@ type ChatDTO struct {
 	ChatID     uuid.UUID
 	Messages   []MessageDTO
 	StartedAt  time.Time
-	FinishedAt *time.Time
+	FinishedAt utils.NullableTime
 }
 
 type MessageText = string
@@ -50,11 +52,6 @@ type MessageDTO struct {
 
 type AnonymousLoginInfoDTO struct {
 	SessionToken string
-}
-
-type CreateChatResultDTO struct {
-	Chat               ChatDTO
-	AnonymousLoginInfo AnonymousLoginInfoDTO
 }
 
 type Socket interface {
@@ -84,15 +81,10 @@ type FinishMyChat = func(AccountLoginInfoDTO, ChatID)
 
 /// Anonymous
 
-type CreateChatError = int
-
-var (
-	AccountNotFound CreateChatError = 0
-)
-
 // CreateChat : When creating chat, one should specify beginning text
-type CreateChat = func(AccountID, string) (CreateChatResultDTO, *CreateChatError)
+type CreateChatAndAnonymous = func(AccountID, string) (ChatDTO, AnonymousLoginInfoDTO, error)
 type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) error
+type JoinChatAccount = func(AccountLoginInfoDTO, ChatID, Socket) error
 type SendMessageAnonymousToAccount = func(AnonymousLoginInfoDTO, ChatID, MessageText) error
 
 // UseCase Implementations

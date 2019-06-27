@@ -132,6 +132,8 @@ type IChat interface {
 	Messages() []IMessage
 	StartedAt() time.Time
 	FinishedAt() utils.NullableTime
+	Anonymous() IAnonymous
+	Account() IAccount
 	AuthorizeAnonymous(Anonymous) bool
 	AuthorizeAccount(Account) bool
 	SendAccountMessageToAnonymous(string)
@@ -153,14 +155,14 @@ type Chat struct {
 	m               *sync.Mutex
 }
 
-func NewChat(acc IAccount, anon IAnonymous, beginningMessateText MessageText) IChat {
+func NewChat(acc IAccount, beginningMessateText MessageText) IChat {
 	msgs := []IMessage{
 		NewAnonymousMessage(beginningMessateText),
 	}
 	return &Chat{
 		chatID:    utils.MustNewUUID(),
 		account:   acc,
-		anonymous: anon,
+		anonymous: NewAnonymous(),
 		messages:  msgs,
 		startedAt: time.Now(),
 		m:         &sync.Mutex{},
@@ -173,6 +175,14 @@ func (c *Chat) ChatID() uuid.UUID {
 
 func (c *Chat) Messages() []IMessage {
 	return c.messages
+}
+
+func (c *Chat) Account() IAccount {
+	return c.account
+}
+
+func (c *Chat) Anonymous() IAnonymous {
+	return c.anonymous
 }
 
 func (c *Chat) StartedAt() time.Time {

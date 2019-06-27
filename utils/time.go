@@ -14,5 +14,6 @@ func (nt NullableTime) MarshalJSON() ([]byte, error) {
 		return []byte("null"), nil
 	}
 
-	return nt.Value.MarshalJSON(), nil
+	b, err := nt.Value.MarshalJSON()
+	return b, err
 }
