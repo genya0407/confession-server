@@ -3,30 +3,56 @@ package repository
 import (
 	"sync"
 
-	"github.com/genya0407/confession-server/entity"
+	"github.com/genya0407/confession-server/domain"
 	"github.com/google/uuid"
+	"github.com/k0kubun/pp"
 )
 
-type OnMemoryChatRepository struct {
-	websocketStore *OnMemoryWebsocketStore
-	chatStore      map[uuid.UUID]entity.IChat
-	m              *sync.Mutex
+type OnMemoryRepository struct {
+	ChatStorage      map[uuid.UUID]domain.IChat
+	AnonymousStorage map[string]domain.IAnonymous
+	AccountStorage   map[string]domain.IAccount
+	m                *sync.Mutex
 }
 
-func NewOnMemoryChatRepository() *OnMemoryChatRepository {
-	return &OnMemoryChatRepository{
-		websocketStore: NewOnMemoryWebsocketStore(),
-		chatStore:      map[uuid.UUID]entity.IChat{},
-		m:              &sync.Mutex{},
+func NewOnMemoryRepository() *OnMemoryRepository {
+	return &OnMemoryRepository{
+		ChatStorage:      map[uuid.UUID]domain.IChat{},
+		AnonymousStorage: map[string]domain.IAnonymous{},
+		AccountStorage:   map[string]domain.IAccount{},
+		m:                &sync.Mutex{},
 	}
 }
 
-func (repo *OnMemoryChatRepository) Store(chat entity.IChat) error {
-	repo.chatStore[chat.ChatID()] = chat
+func (repo *OnMemoryRepository) StoreChat(chat domain.IChat) error {
+	repo.m.Lock()
+	defer repo.m.Unlock()
+
+	repo.ChatStorage[chat.ChatID()] = chat
+	pp.Println(repo)
 	return nil
 }
 
-func (repo *OnMemoryChatRepository) FindByID(chatID uuid.UUID) (entity.IChat, bool) {
-	chat, ok := repo.chatStore[chatID]
+func (repo *OnMemoryRepository) FindChatByID(chatID uuid.UUID) (domain.IChat, bool) {
+	repo.m.Lock()
+	defer repo.m.Unlock()
+
+	chat, ok := repo.ChatStorage[chatID]
 	return chat, ok
+}
+
+func (repo *OnMemoryRepository) FindAccountByToken(token string) (domain.IAccount, bool) {
+	repo.m.Lock()
+	defer repo.m.Unlock()
+
+	acc, ok := repo.AccountStorage[token]
+	return acc, ok
+}
+
+func (repo *OnMemoryRepository) FindAnonymousByToken(token string) (domain.IAnonymous, bool) {
+	repo.m.Lock()
+	defer repo.m.Unlock()
+
+	acc, ok := repo.AnonymousStorage[token]
+	return acc, ok
 }

@@ -32,6 +32,16 @@ type Account struct {
 	token      string
 }
 
+func NewAccount(name string, screenName string, imageUrl string) IAccount {
+	return Account{
+		accountID:  utils.MustNewUUID(),
+		name:       name,
+		screenName: screenName,
+		imageUrl:   imageUrl,
+		token:      utils.GenerateToken68Token(tokenLength),
+	}
+}
+
 func (a Account) AccountID() uuid.UUID {
 	return a.accountID
 }

@@ -2,52 +2,82 @@ package main
 
 import (
 	"fmt"
-	auth "github.com/genya0407/confession-server/authorization"
-	"github.com/gorilla/websocket"
+	"github.com/genya0407/confession-server/domain"
+	"github.com/genya0407/confession-server/jsonapi"
+	"github.com/genya0407/confession-server/repository"
+	"github.com/genya0407/confession-server/usecase"
 	"github.com/julienschmidt/httprouter"
+	"github.com/k0kubun/pp"
 	"log"
 	"net/http"
 )
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
+func joinChatAnonymousHandler(repo *repository.OnMemoryRepository) func(http.ResponseWriter, *http.Request, httprouter.Params) {
+	joinChatAnonymousService := domain.GenerateJoinChatAnonymousService(
+		repo.FindChatByID,
+		repo.StoreChat,
+	)
+	joinChatAnonymous := usecase.GenerateJoinChatAnonymous(
+		joinChatAnonymousService,
+		repo.FindAnonymousByToken,
+		repo.FindChatByID,
+	)
+
+	sendAnonymousMessageToAccountService := domain.GenerateSendAnonymousMessageToAccountService(
+		repo.StoreChat,
+	)
+	sendMessageAnonymousToAccount := usecase.GenerateSendMessageAnonymousToAccount(
+		sendAnonymousMessageToAccountService,
+		repo.FindAnonymousByToken,
+		repo.FindChatByID,
+	)
+
+	joinChatAnonymousHandler := jsonapi.AuthorizeAnonymous(
+		jsonapi.GenerateJoinChatAnonymous(
+			joinChatAnonymous,
+			sendMessageAnonymousToAccount,
+		),
+	)
+
+	return joinChatAnonymousHandler
 }
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
+func joinChatAccountHandler(repo *repository.OnMemoryRepository) func(http.ResponseWriter, *http.Request, httprouter.Params) {
+	joinChatAccountService := domain.GenerateJoinChatAccountService(repo.FindChatByID, repo.StoreChat)
+	joinChatAccount := usecase.GenerateJoinChatAccount(
+		joinChatAccountService,
+		repo.FindAccountByToken,
+		repo.FindChatByID,
+	)
+	sendAccountMessageToAnonymousService := domain.GenerateSendAccountMessageToAnonymousService(
+		repo.StoreChat,
+	)
+	sendMessageAccountToAnonymous := usecase.GenerateSendMessageAccountToAnonymous(
+		sendAccountMessageToAnonymousService,
+		repo.FindAccountByToken,
+		repo.FindChatByID,
+	)
+	joinChatAccountHandler := jsonapi.AuthorizeAccount(
+		jsonapi.GenerateJoinChatAccount(
+			joinChatAccount,
+			sendMessageAccountToAnonymous,
+		),
+	)
 
-func WebSock(w http.ResponseWriter, r *http.Request, ps httprouter.Params, t auth.SessionToken) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	err = conn.WriteMessage(websocket.TextMessage, []byte(t))
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-
-	_, msg, err := conn.ReadMessage()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(string(msg))
-}
-
-func HelloInternal(w http.ResponseWriter, r *http.Request, ps httprouter.Params, t auth.SessionToken) {
-	fmt.Fprintf(w, "%s, %s!\n", ps.ByName("greet"), t)
+	return joinChatAccountHandler
 }
 
 func main() {
-	router := httprouter.New()
-	router.GET("/", Index)
-	router.GET("/hello/:name", Hello)
-	router.GET("/hellointernal/:greet", auth.AuthorizeBearer(HelloInternal))
-	router.GET("/connect", auth.AuthorizeBearer(WebSock))
+	repo := repository.NewOnMemoryRepository()
+	account := domain.NewAccount("Yusuke Sangenya", "yusuke.sangenya", "http://hogehoge.com/img.png")
+	repo.AccountStorage[account.Token()] = account
+	pp.Println(account)
+	pp.Println(account.AccountID().String())
 
+	router := httprouter.New()
+	router.GET(`/anonymous/account/:account_id/chat/:chat_id`, joinChatAnonymousHandler(repo))
+	router.GET(`/connect/chat/:chat_id`, joinChatAccountHandler(repo))
+
+	fmt.Println("Start at: http://localhost:8080")
 	log.Fatal(http.ListenAndServe("localhost:8080", router))
 }

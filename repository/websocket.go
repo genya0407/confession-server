@@ -3,27 +3,27 @@ package repository
 import (
 	"sync"
 
-	"github.com/genya0407/confession-server/entity"
+	"github.com/genya0407/confession-server/domain"
 )
 
 type socketPair struct {
-	accountSocket   entity.Socket
-	anonymousSocket entity.Socket
+	accountSocket   domain.ISocket
+	anonymousSocket domain.ISocket
 }
 
 type OnMemoryWebsocketStore struct {
 	m       *sync.Mutex
-	storage map[entity.ChatID]socketPair
+	storage map[domain.ChatID]socketPair
 }
 
 func NewOnMemoryWebsocketStore() *OnMemoryWebsocketStore {
 	return &OnMemoryWebsocketStore{
 		m:       &sync.Mutex{},
-		storage: map[entity.ChatID]socketPair{},
+		storage: map[domain.ChatID]socketPair{},
 	}
 }
 
-func (wsm *OnMemoryWebsocketStore) FindAnonymousSocket(cID entity.ChatID) entity.Socket {
+func (wsm *OnMemoryWebsocketStore) FindAnonymousSocket(cID domain.ChatID) domain.ISocket {
 	wsm.m.Lock()
 	defer wsm.m.Unlock()
 
@@ -35,7 +35,7 @@ func (wsm *OnMemoryWebsocketStore) FindAnonymousSocket(cID entity.ChatID) entity
 	return pair.anonymousSocket
 }
 
-func (wsm *OnMemoryWebsocketStore) FindAccountSocket(cID entity.ChatID) entity.Socket {
+func (wsm *OnMemoryWebsocketStore) FindAccountSocket(cID domain.ChatID) domain.ISocket {
 	wsm.m.Lock()
 	defer wsm.m.Unlock()
 
@@ -47,7 +47,7 @@ func (wsm *OnMemoryWebsocketStore) FindAccountSocket(cID entity.ChatID) entity.S
 	return pair.accountSocket
 }
 
-func (wsm *OnMemoryWebsocketStore) RegisterAnonymousSocket(cID entity.ChatID, s entity.Socket) {
+func (wsm *OnMemoryWebsocketStore) RegisterAnonymousSocket(cID domain.ChatID, s domain.ISocket) {
 	wsm.m.Lock()
 	defer wsm.m.Unlock()
 
@@ -56,7 +56,7 @@ func (wsm *OnMemoryWebsocketStore) RegisterAnonymousSocket(cID entity.ChatID, s 
 	wsm.storage[cID] = pair
 }
 
-func (wsm *OnMemoryWebsocketStore) RegisterAccountSocket(cID entity.ChatID, s entity.Socket) {
+func (wsm *OnMemoryWebsocketStore) RegisterAccountSocket(cID domain.ChatID, s domain.ISocket) {
 	wsm.m.Lock()
 	defer wsm.m.Unlock()
 

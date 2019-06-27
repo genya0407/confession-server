@@ -51,7 +51,7 @@ func GenerateSendAccountMessageToAnonymousService(storeChat IStoreChat) ISendAcc
 
 type ISendAnonymousMessageToAccountService = func(IChat, MessageText)
 
-func GenerateSendAnonymousMessageToAnonymousService(storeChat IStoreChat) ISendAnonymousMessageToAccountService {
+func GenerateSendAnonymousMessageToAccountService(storeChat IStoreChat) ISendAnonymousMessageToAccountService {
 	return func(chat IChat, text MessageText) {
 		chat.SendAnonymousMessageToAccount(text)
 		storeChat(chat)
