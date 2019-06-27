@@ -33,6 +33,14 @@ func chatToDTO(chat domain.IChat) ChatDTO {
 	}
 }
 
+func authorizeAccount(chat domain.IChat, acc domain.IAccount) bool {
+	return chat.Account().Token() == acc.Token()
+}
+
+func authorizeAnonymous(chat domain.IChat, anon domain.IAnonymous) bool {
+	return chat.Anonymous().Token() == anon.Token()
+}
+
 // impls
 
 type SocketImpl struct {
@@ -60,12 +68,12 @@ func GenerateCreateChatAnonymous(createNewChatService domain.ICreateNewChatServi
 
 func GenerateJoinChatAnonymous(joinChatAnonymousService domain.IJoinChatAnonymousService, findAnonymousByToken domain.IFindAnonymousByToken, findChatByID domain.IFindChatByID) JoinChatAnonymous {
 	return func(anonLoginInfo AnonymousLoginInfoDTO, cID ChatID, s Socket) error {
-		_, ok := findAnonymousByToken(anonLoginInfo.SessionToken)
+		anon, ok := findAnonymousByToken(anonLoginInfo.SessionToken)
 		if !ok {
 			return errors.New("Invalid token")
 		}
 		chat, ok := findChatByID(cID)
-		if !ok || chat.Anonymous().Token() != anonLoginInfo.SessionToken { // authorization
+		if !ok || !authorizeAnonymous(chat, anon) { // authorization
 			return errors.New("Chat not found")
 		}
 
@@ -76,12 +84,12 @@ func GenerateJoinChatAnonymous(joinChatAnonymousService domain.IJoinChatAnonymou
 
 func GenerateJoinChatAccount(joinChatAccountService domain.IJoinChatAccountService, findAccountByToken domain.IFindAccountByToken, findChatByID domain.IFindChatByID) JoinChatAccount {
 	return func(accLoginInfo AccountLoginInfoDTO, cID ChatID, s Socket) error {
-		_, ok := findAccountByToken(accLoginInfo.SessionToken)
+		acc, ok := findAccountByToken(accLoginInfo.SessionToken)
 		if !ok {
 			return errors.New("Invalid token")
 		}
 		chat, ok := findChatByID(cID)
-		if !ok || chat.Account().Token() != accLoginInfo.SessionToken { // authorization
+		if !ok || !authorizeAccount(chat, acc) { // authorization
 			return errors.New("Chat not found")
 		}
 
@@ -101,7 +109,7 @@ func GenerateSendMessageAnonymousToAccount(
 			return errors.New("Invalid token")
 		}
 		chat, ok := findChatByID(chatID)
-		if !ok || chat.AuthorizeAnonymous(anon) { // authorization
+		if !ok || !authorizeAnonymous(chat, anon) { // authorization
 			return errors.New("Chat not found")
 		}
 
@@ -121,7 +129,7 @@ func GenerateSendMessageAccountToAnonymous(
 			return errors.New("Invalid token")
 		}
 		chat, ok := findChatByID(chatID)
-		if !ok || chat.AuthorizeAccount(acc) { // authorization
+		if !ok || !authorizeAccount(chat, acc) { // authorization
 			return errors.New("Chat not found")
 		}
 
