@@ -1,12 +1,13 @@
-package repositoryimpl
+package repository
 
 import (
 	"database/sql"
 	"fmt"
+	"os"
+
 	"github.com/doug-martin/goqu"
 	_ "github.com/doug-martin/goqu/adapters/postgres"
 	_ "github.com/lib/pq"
-	"os"
 )
 
 func GetDB() *goqu.Database {
