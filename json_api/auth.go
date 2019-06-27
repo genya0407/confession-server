@@ -25,7 +25,7 @@ func invalidToken(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
 }
 
-const token68regexp = `[A-Za-z0-9\-._~+/]+`
+const token68regexp = `[A-Za-z0-9\-._~+/]+=*`
 
 func fetchBearerToken(s string) (string, error) {
 	rep := regexp.MustCompile(fmt.Sprintf(`Bearer (%s)`, token68regexp))
