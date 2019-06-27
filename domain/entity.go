@@ -134,8 +134,8 @@ type IChat interface {
 	FinishedAt() utils.NullableTime
 	Anonymous() IAnonymous
 	Account() IAccount
-	AuthorizeAnonymous(Anonymous) bool
-	AuthorizeAccount(Account) bool
+	AuthorizeAnonymous(IAnonymous) bool
+	AuthorizeAccount(IAccount) bool
 	SendAccountMessageToAnonymous(string)
 	SendAnonymousMessageToAccount(string)
 	RegisterAccountSocket(ISocket)
@@ -193,12 +193,12 @@ func (c *Chat) FinishedAt() utils.NullableTime {
 	return c.finishedAt
 }
 
-func (c *Chat) AuthorizeAccount(acc Account) bool {
-	return c.account == acc
+func (c *Chat) AuthorizeAccount(acc IAccount) bool {
+	return c.account.Token() == acc.Token()
 }
 
-func (c *Chat) AuthorizeAnonymous(anon Anonymous) bool {
-	return c.anonymous == anon
+func (c *Chat) AuthorizeAnonymous(anon IAnonymous) bool {
+	return c.anonymous.Token() == anon.Token()
 }
 
 func (c *Chat) Close() {

@@ -39,3 +39,30 @@ func GenerateJoinChatAccountService(findChatByID IFindChatByID, storeChat IStore
 		storeChat(chat)
 	}
 }
+
+type ISendAccountMessageToAnonymousService = func(IChat, MessageText)
+
+func GenerateSendAccountMessageToAnonymousService(storeChat IStoreChat) ISendAccountMessageToAnonymousService {
+	return func(chat IChat, text MessageText) {
+		chat.SendAccountMessageToAnonymous(text)
+		storeChat(chat)
+	}
+}
+
+type ISendAnonymousMessageToAccountService = func(IChat, MessageText)
+
+func GenerateSendAnonymousMessageToAnonymousService(storeChat IStoreChat) ISendAnonymousMessageToAccountService {
+	return func(chat IChat, text MessageText) {
+		chat.SendAnonymousMessageToAccount(text)
+		storeChat(chat)
+	}
+}
+
+type ICloseChat = func(IChat)
+
+func GenerateCloseChatService(storeChat IStoreChat) ICloseChat {
+	return func(chat IChat) {
+		chat.Close()
+		storeChat(chat)
+	}
+}

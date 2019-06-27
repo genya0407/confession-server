@@ -86,6 +86,7 @@ type CreateChatAndAnonymous = func(AccountID, string) (ChatDTO, AnonymousLoginIn
 type JoinChatAnonymous = func(AnonymousLoginInfoDTO, ChatID, Socket) error
 type JoinChatAccount = func(AccountLoginInfoDTO, ChatID, Socket) error
 type SendMessageAnonymousToAccount = func(AnonymousLoginInfoDTO, ChatID, MessageText) error
+type SendMessageAccountToAnonymous = func(AccountLoginInfoDTO, ChatID, MessageText) error
 
 // UseCase Implementations
 // TODO

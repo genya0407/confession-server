@@ -90,15 +90,42 @@ func GenerateJoinChatAccount(joinChatAccountService domain.IJoinChatAccountServi
 	}
 }
 
-// func GenerateSendMessageAnonymousToAccount(findChatByID domain.FindChatAnonymous) SendMessageAnonymousToAccount {
-// 	return func(anonLoginInfo AnonymousLoginInfoDTO, chatID ChatID, msgText MessageText) error {
-// 		chat, ok := findChatByID(chatID, domain.Anonymous{Token: anonLoginInfo.SessionToken})
-// 		if !ok {
-// 			return errors.New("Chat not found")
-// 		}
+func GenerateSendMessageAnonymousToAccount(
+	sendAnonymousMessageToAccountService domain.ISendAnonymousMessageToAccountService,
+	findAnonymousByToken domain.IFindAnonymousByToken,
+	findChatByID domain.IFindChatByID,
+) SendMessageAnonymousToAccount {
+	return func(anonLoginInfo AnonymousLoginInfoDTO, chatID ChatID, text MessageText) error {
+		anon, ok := findAnonymousByToken(anonLoginInfo.SessionToken)
+		if !ok {
+			return errors.New("Invalid token")
+		}
+		chat, ok := findChatByID(chatID)
+		if !ok || chat.AuthorizeAnonymous(anon) { // authorization
+			return errors.New("Chat not found")
+		}
 
-// 		chat.SendAnonymousMessageToAccount(msgText)
+		sendAnonymousMessageToAccountService(chat, text)
+		return nil
+	}
+}
 
-// 		return nil
-// 	}
-// }
+func GenerateSendMessageAccountToAnonymous(
+	sendAccountMessageToAnonymousService domain.ISendAccountMessageToAnonymousService,
+	findAccountByToken domain.IFindAccountByToken,
+	findChatByID domain.IFindChatByID,
+) SendMessageAccountToAnonymous {
+	return func(accLoginInfo AccountLoginInfoDTO, chatID ChatID, text MessageText) error {
+		acc, ok := findAccountByToken(accLoginInfo.SessionToken)
+		if !ok {
+			return errors.New("Invalid token")
+		}
+		chat, ok := findChatByID(chatID)
+		if !ok || chat.AuthorizeAccount(acc) { // authorization
+			return errors.New("Chat not found")
+		}
+
+		sendAccountMessageToAnonymousService(chat, text)
+		return nil
+	}
+}
