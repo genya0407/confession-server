@@ -135,10 +135,15 @@ type SocketImpl struct {
 }
 
 func (s *SocketImpl) SendTextJSON(msg MessageJSON) {
-	s.conn.WriteJSON(msg)
+	log.Printf(`SendTextJSON: %v`, msg)
+	err := s.conn.WriteJSON(msg)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }
 
 func (s *SocketImpl) SendText(msg usecase.MessageDTO) {
+	log.Printf(`SendText: %v`, msg)
 	s.SendTextJSON(MessageJSON{
 		MessageID:   msg.MessageID,
 		Text:        msg.Text,
@@ -172,12 +177,18 @@ func GenerateJoinChatAnonymous(joinChatAnonymous usecase.JoinChatAnonymous, send
 		for {
 			newMessageJSON := &NewMessageJSON{}
 			err := conn.ReadJSON(newMessageJSON)
+			log.Printf(`Message Received: %s`, newMessageJSON.Text)
 			if err != nil {
 				log.Println(err)
 				conn.Close()
 				break
 			}
-			sendMessageAnonymousToAccount(anonymousLoginInfo, chatID, newMessageJSON.Text)
+			err = sendMessageAnonymousToAccount(anonymousLoginInfo, chatID, newMessageJSON.Text)
+			if err != nil {
+				log.Println(err)
+				conn.Close()
+				break
+			}
 		}
 	}
 }
@@ -208,12 +219,18 @@ func GenerateJoinChatAccount(joinChatAccount usecase.JoinChatAccount, sendMessag
 		for {
 			newMessageJSON := &NewMessageJSON{}
 			err := conn.ReadJSON(newMessageJSON)
+			log.Printf(`Message Received: %s`, newMessageJSON.Text)
 			if err != nil {
 				log.Println(err)
 				conn.Close()
 				break
 			}
-			sendMessageAccountToAnonymous(accountLoginInfo, chatID, newMessageJSON.Text)
+			err = sendMessageAccountToAnonymous(accountLoginInfo, chatID, newMessageJSON.Text)
+			if err != nil {
+				log.Println(err)
+				conn.Close()
+				break
+			}
 		}
 	}
 }
