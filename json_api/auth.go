@@ -3,11 +3,12 @@ package json_api
 import (
 	"errors"
 	"fmt"
-	"github.com/genya0407/confession-server/usecase"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/genya0407/confession-server/usecase"
+	"github.com/julienschmidt/httprouter"
 )
 
 func requireAuthorizationBearer(w http.ResponseWriter) {
