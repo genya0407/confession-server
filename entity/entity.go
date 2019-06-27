@@ -9,17 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// utils
-
-func mustNewUUID() uuid.UUID {
-	u, err := uuid.NewUUID()
-	if err != nil {
-		panic(err)
-	}
-
-	return u
-}
-
 // data structures
 
 type TwitterAccount struct {
@@ -27,22 +16,58 @@ type TwitterAccount struct {
 	AccountID        uuid.UUID
 }
 
+type IAccount interface {
+	AccountID() uuid.UUID
+	Name() string
+	ScreenName() string
+	ImageURL() string
+	Token() string
+}
+
 type Account struct {
-	AccountID  uuid.UUID
-	Name       string
-	ScreenName string
-	ImageUrl   string
-	Token      string
+	accountID  uuid.UUID
+	name       string
+	screenName string
+	imageUrl   string
+	token      string
+}
+
+func (a Account) AccountID() uuid.UUID {
+	return a.accountID
+}
+
+func (a Account) Name() string {
+	return a.name
+}
+
+func (a Account) ScreenName() string {
+	return a.screenName
+}
+
+func (a Account) ImageURL() string {
+	return a.imageUrl
+}
+
+func (a Account) Token() string {
+	return a.token
+}
+
+type IAnonymous interface {
+	Token() string
 }
 
 type Anonymous struct {
-	Token string
+	token string
+}
+
+func (a Anonymous) Token() string {
+	return a.token
 }
 
 const tokenLength = 30
 
 func NewAnonymous() Anonymous {
-	return Anonymous{Token: utils.GenerateToken68Token(tokenLength)}
+	return Anonymous{token: utils.GenerateToken68Token(tokenLength)}
 }
 
 type IMessage interface {
