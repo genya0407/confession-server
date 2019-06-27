@@ -1,12 +1,10 @@
 package repository
 
 import (
-	"github.com/k0kubun/pp"
-	"log"
-	"sync"
-
 	"github.com/genya0407/confession-server/domain"
 	"github.com/google/uuid"
+	"log"
+	"sync"
 )
 
 type OnMemoryRepository struct {
@@ -47,11 +45,10 @@ func (repo *OnMemoryRepository) FindAccountByToken(token string) (domain.IAccoun
 	defer repo.m.Unlock()
 
 	acc, ok := repo.AccountStorage[token]
-	log.Println(`FindAccountByToken tried.`)
 	if !ok {
+		log.Println(`FindAccountByToken tried.`)
 		log.Println(`But failed (not found)`)
 	}
-	pp.Print(acc)
 	return acc, ok
 }
 

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -223,9 +224,11 @@ func (c *Chat) SendAnonymousMessageToAccount(text MessageText) {
 	msg := NewAnonymousMessage(text)
 	c.messages = append(c.messages, msg)
 
-	if c.accountSocket != nil {
-		c.accountSocket.SendText(msg)
+	if c.accountSocket == nil {
+		log.Println("Anonymous message sent, but account socket does not exist")
+		return
 	}
+	c.accountSocket.SendText(msg)
 }
 
 func (c *Chat) SendAccountMessageToAnonymous(text MessageText) {
@@ -235,9 +238,11 @@ func (c *Chat) SendAccountMessageToAnonymous(text MessageText) {
 	msg := NewAccountMessage(text)
 	c.messages = append(c.messages, msg)
 
-	if c.anonymousSocket != nil {
-		c.anonymousSocket.SendText(msg)
+	if c.anonymousSocket == nil {
+		log.Println("Account message sent, but anonymous socket does not exist")
+		return
 	}
+	c.anonymousSocket.SendText(msg)
 }
 
 func (c *Chat) RegisterAccountSocket(s ISocket) {

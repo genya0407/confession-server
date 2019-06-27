@@ -1,25 +1,17 @@
 package usecase
 
 import (
-	"github.com/genya0407/confession-server/entity"
-	"github.com/google/uuid"
+	"github.com/genya0407/confession-server/domain"
+	"github.com/genya0407/confession-server/repository"
+	"log"
 	"testing"
-	"time"
 )
 
-func mustNewUUID() uuid.UUID {
-	u, err := uuid.NewUUID()
-	if err != nil {
-		panic(err)
-	}
-	return u
-}
-
 type mockSocket struct {
-	c chan entity.Message
+	c chan domain.Message
 }
 
-func (ms *mockSocket) SendText(msg entity.Message) {
+func (ms *mockSocket) SendText(msg domain.Message) {
 	ms.c <- msg
 }
 
@@ -27,38 +19,58 @@ func (ms *mockSocket) Close() {
 	close(ms.c)
 }
 
-func TestSendMessageAnonymousToAccount(t *testing.T) {
-	anon := AnonymousLoginInfoDTO{SessionToken: "aaaaa"}
-	expectedChatID := mustNewUUID()
-	c := make(chan entity.Message)
-	findChatAnonymous := func(cID entity.ChatID, anon entity.Anonymous) (entity.Chat, bool) {
-		if cID == expectedChatID {
-			return entity.Chat{
-				ChatID:        expectedChatID,
-				AccountSocket: &mockSocket{c: c},
-				Anonymous: entity.Anonymous{
-					Token: anon.Token,
-				},
-			}, true
-		}
+type MockSocket struct {
+	c chan domain.IMessage
+}
 
-		return entity.Chat{}, false
-	}
+func (ms *MockSocket) SendText(msg domain.IMessage) {
+	ms.c <- msg
+}
+
+func (ms *MockSocket) Close() {
+	close(ms.c)
+}
+
+func TestSendMessageAnonymousToAccount(t *testing.T) {
+	repo := repository.NewOnMemoryRepository()
+	account := domain.NewAccount("Yusuke Sangenya", "yusuke.sangenya", "http://hogehoge.com/img.png")
+	repo.AccountStorage[account.Token()] = account
+	chat := domain.NewChat(account, "Lets start some chat!")
+	repo.StoreChat(chat)
+
+	sendAnonymousMessageToAccountService := domain.GenerateSendAnonymousMessageToAccountService(
+		repo.StoreChat,
+	)
+	sendMessageAnonymousToAccountUsecase := GenerateSendMessageAnonymousToAccount(
+		sendAnonymousMessageToAccountService,
+		repo.FindAnonymousByToken,
+		repo.FindChatByID,
+	)
 
 	msgText := "abcdef"
-	msg := MessageDTO{
-		MessageID:   mustNewUUID(),
-		Text:        msgText,
-		SentAt:      time.Now(),
-		ByAnonymous: true,
-	}
 
-	sendMessageAnonymousToAccount := GenerateSendMessageAnonymousToAccount(findChatAnonymous)
+	accChan := make(chan domain.IMessage)
+	accSocket := &MockSocket{c: accChan}
+	joinChatAccountService := domain.GenerateJoinChatAccountService(repo.FindChatByID, repo.StoreChat)
+	joinChatAccountService(chat, accSocket)
+
+	anonChan := make(chan domain.IMessage)
+	anonSocket := &MockSocket{c: anonChan}
+	joinChatAnonymousService := domain.GenerateJoinChatAnonymousService(repo.FindChatByID, repo.StoreChat)
+	joinChatAnonymousService(chat, anonSocket)
+
 	go func() {
-		sendMessageAnonymousToAccount(anon, expectedChatID, msg)
+		err := sendMessageAnonymousToAccountUsecase(
+			AnonymousLoginInfoDTO{SessionToken: chat.Anonymous().Token()},
+			chat.ChatID(),
+			msgText,
+		)
+		if err != nil {
+			log.Print(err.Error())
+		}
 	}()
-	sentMessage := <-c
-	if sentMessage.Text != msgText {
+	sentMessage := <-accChan
+	if sentMessage.Text() != msgText {
 		t.Error("Invalid message")
 	}
 }
