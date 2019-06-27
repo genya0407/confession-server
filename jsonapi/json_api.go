@@ -198,7 +198,12 @@ func GenerateJoinChatAccount(joinChatAccount usecase.JoinChatAccount, sendMessag
 			return
 		}
 
-		joinChatAccount(accountLoginInfo, chatID, &SocketImpl{conn: conn})
+		err = joinChatAccount(accountLoginInfo, chatID, &SocketImpl{conn: conn})
+		if err != nil {
+			log.Println(err.Error())
+			conn.Close()
+			return
+		}
 
 		for {
 			newMessageJSON := &NewMessageJSON{}
