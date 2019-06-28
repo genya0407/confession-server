@@ -80,7 +80,14 @@ func main() {
 	pp.Println(chat.ChatID().String())
 
 	accountWSURL := fmt.Sprintf(`ws://localhost:8080/connect/chat/%s?access_token=%s`, chat.ChatID(), url.QueryEscape(account.Token()))
-	anonymousWSURL := fmt.Sprintf(`ws://localhost:8080/anonymous/account/%s/chat/%s?access_token=%s`, account.AccountID(), chat.ChatID(), url.QueryEscape(chat.Anonymous().Token()))
+	anonymousWSURL := fmt.Sprintf(`ws://localhost:8080/anonymous/connect/chat/%s?access_token=%s`, chat.ChatID(), url.QueryEscape(chat.Anonymous().Token()))
+
+	fmt.Printf(`
+ChatID:         %s
+AccountToken:   %s
+AnonymousToken: %s
+
+`, chat.ChatID(), account.Token(), chat.Anonymous().Token())
 
 	fmt.Printf(`
 acc = new WebSocket("%s");
@@ -92,7 +99,7 @@ anon.onmessage = function(msg) { console.log(msg) };
 `, accountWSURL, anonymousWSURL)
 
 	router := httprouter.New()
-	router.GET(`/anonymous/account/:account_id/chat/:chat_id`, joinChatAnonymousHandler(repo))
+	router.GET(`/anonymous/connect/chat/:chat_id`, joinChatAnonymousHandler(repo))
 	router.GET(`/connect/chat/:chat_id`, joinChatAccountHandler(repo))
 
 	fmt.Println("Start at: http://localhost:8080")
