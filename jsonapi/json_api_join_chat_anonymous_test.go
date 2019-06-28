@@ -123,9 +123,17 @@ func TestChat(t *testing.T) {
 	if err != nil {
 		panic(err.Error())
 	}
-
 	if msg.Text != text {
 		t.Error("Invalid message received")
+		return
+	}
+
+	err = accountWS.ReadJSON(msg)
+	if err != nil {
+		panic(err.Error())
+	}
+	if msg.Text != text {
+		t.Error("Invalid sent-back message received")
 		return
 	}
 }

@@ -226,9 +226,15 @@ func (c *Chat) SendAnonymousMessageToAccount(text MessageText) {
 
 	if c.accountSocket == nil {
 		log.Println("Anonymous message sent, but account socket does not exist")
-		return
+	} else {
+		c.accountSocket.SendText(msg)
 	}
-	c.accountSocket.SendText(msg)
+
+	if c.anonymousSocket == nil {
+		log.Println("Anonymous message sent, but anonymous socket does not exist")
+	} else {
+		c.anonymousSocket.SendText(msg)
+	}
 }
 
 func (c *Chat) SendAccountMessageToAnonymous(text MessageText) {
@@ -238,11 +244,17 @@ func (c *Chat) SendAccountMessageToAnonymous(text MessageText) {
 	msg := NewAccountMessage(text)
 	c.messages = append(c.messages, msg)
 
+	if c.accountSocket == nil {
+		log.Println("Account message sent, but account socket does not exist")
+	} else {
+		c.accountSocket.SendText(msg)
+	}
+
 	if c.anonymousSocket == nil {
 		log.Println("Account message sent, but anonymous socket does not exist")
-		return
+	} else {
+		c.anonymousSocket.SendText(msg)
 	}
-	c.anonymousSocket.SendText(msg)
 }
 
 func (c *Chat) RegisterAccountSocket(s ISocket) {

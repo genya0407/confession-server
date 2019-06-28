@@ -73,4 +73,8 @@ func TestSendMessageAnonymousToAccount(t *testing.T) {
 	if sentMessage.Text() != msgText {
 		t.Error("Invalid message")
 	}
+	sentBackMessage := <-anonChan
+	if sentBackMessage.Text() != msgText {
+		t.Error("Invalid sent-back message")
+	}
 }
